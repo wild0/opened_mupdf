@@ -3,6 +3,8 @@ package com.artifex.mupdfdemo;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.artifex.mupdfdemo.ext.PointFExt;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -16,6 +18,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -90,8 +93,8 @@ public abstract class PageView extends ViewGroup {
 	private static final int HIGHLIGHT_COLOR = 0x802572AC;
 	private static final int LINK_COLOR = 0x80AC7225;
 	private static final int BOX_COLOR = 0xFF4444FF;
-	private static final int INK_COLOR = 0xFFFF0000;
-	private static final float INK_THICKNESS = 10.0f;
+	//private static final int INK_COLOR = 0xFFFF0000;
+	//private static final float INK_THICKNESS = 10.0f;
 	private static final int BACKGROUND_COLOR = 0xFFFFFFFF;
 	private static final int PROGRESS_DIALOG_DELAY = 200;
 	protected final Context   mContext;
@@ -117,7 +120,7 @@ public abstract class PageView extends ViewGroup {
 	private       RectF     mSelectBox;
 	private       TextWord  mText[][];
 	private       RectF     mItemSelectBox;
-	protected     ArrayList<ArrayList<PointF>> mDrawing;
+	protected     ArrayList<ArrayList<PointFExt>> mDrawing;
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
 	private       boolean   mHighlightLinks;
@@ -134,6 +137,27 @@ public abstract class PageView extends ViewGroup {
 		mPatchBm = sharedHqBm;
 		mEntireMat = new Matrix();
 	}
+	
+	static int color = 0xFFFF0000;
+	static float thickness = 10.0f;
+	
+	public static int getColor() {
+		return color;
+	}
+	public static void setColor(int color) {
+		PageView.color = color;
+	}
+	public static float getThickness() {
+		return thickness;
+	}
+	public static void setThickness(float thickness) {
+		PageView.thickness = thickness;
+	}
+
+	
+	
+	
+	
 
 	protected abstract CancellableTaskDefinition<Void, Void> getDrawPageTask(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract CancellableTaskDefinition<Void, Void> getUpdatePageTask(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
@@ -351,8 +375,9 @@ public abstract class PageView extends ViewGroup {
 					}
 
 					if (mDrawing != null) {
+						/*
 						Path path = new Path();
-						PointF p;
+						PointFExt p;
 
 						paint.setAntiAlias(true);
 						paint.setDither(true);
@@ -360,15 +385,40 @@ public abstract class PageView extends ViewGroup {
 						paint.setStrokeCap(Paint.Cap.ROUND);
 
 						paint.setStyle(Paint.Style.FILL);
-						paint.setStrokeWidth(INK_THICKNESS * scale);
-						paint.setColor(INK_COLOR);
+						paint.setStrokeWidth(p.getThickness() * scale);
+						paint.setColor(p.getColor());
+						*/
 
-						Iterator<ArrayList<PointF>> it = mDrawing.iterator();
+						Iterator<ArrayList<PointFExt>> it = mDrawing.iterator();
 						while (it.hasNext()) {
-							ArrayList<PointF> arc = it.next();
+							
+							Paint pa = new Paint();
+							pa.setAntiAlias(true);
+							pa.setDither(true);
+							pa.setStrokeJoin(Paint.Join.ROUND);
+							pa.setStrokeCap(Paint.Cap.ROUND);
+
+							pa.setStyle(Paint.Style.FILL);
+							//pa.setStrokeWidth(thickness * scale);
+							//pa.setColor(color);
+							Path path = new Path();
+							PointFExt p;
+							
+							ArrayList<PointFExt> arc = it.next();
+							
+							
+							
 							if (arc.size() >= 2) {
-								Iterator<PointF> iit = arc.iterator();
+								Iterator<PointFExt> iit = arc.iterator();
 								p = iit.next();
+								
+								if(p.getPage()!=mPageNumber){
+									continue;
+								}
+								
+								pa.setColor(p.getColor());
+								pa.setStrokeWidth(p.getThickness() * scale);
+								
 								float mX = p.x * scale;
 								float mY = p.y * scale;
 								path.moveTo(mX, mY);
@@ -383,12 +433,14 @@ public abstract class PageView extends ViewGroup {
 								path.lineTo(mX, mY);
 							} else {
 								p = arc.get(0);
-								canvas.drawCircle(p.x * scale, p.y * scale, INK_THICKNESS * scale / 2, paint);
+								canvas.drawCircle(p.x * scale, p.y * scale, thickness * scale / 2, pa);
 							}
+							pa.setStyle(Paint.Style.STROKE);
+							canvas.drawPath(path, pa);
 						}
 
-						paint.setStyle(Paint.Style.STROKE);
-						canvas.drawPath(path, paint);
+						//paint.setStyle(Paint.Style.STROKE);
+						//canvas.drawPath(path, paint);
 					}
 				}
 			};
@@ -446,27 +498,31 @@ public abstract class PageView extends ViewGroup {
 		}
 	}
 
-	public void startDraw(float x, float y) {
+	public void startDraw(int page, float x, float y) {
 		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
 		float docRelX = (x - getLeft())/scale;
 		float docRelY = (y - getTop())/scale;
 		if (mDrawing == null)
-			mDrawing = new ArrayList<ArrayList<PointF>>();
+			mDrawing = new ArrayList<ArrayList<PointFExt>>();
 
-		ArrayList<PointF> arc = new ArrayList<PointF>();
-		arc.add(new PointF(docRelX, docRelY));
+		ArrayList<PointFExt> arc = new ArrayList<PointFExt>();
+		arc.add(new PointFExt(page, docRelX, docRelY, color, thickness));
+		
+		Log.d("mupdf","start color:"+color+",thickness:"+thickness);
+		
 		mDrawing.add(arc);
 		mSearchView.invalidate();
 	}
 
-	public void continueDraw(float x, float y) {
+	public void continueDraw(int page, float x, float y) {
 		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
 		float docRelX = (x - getLeft())/scale;
 		float docRelY = (y - getTop())/scale;
 
 		if (mDrawing != null && mDrawing.size() > 0) {
-			ArrayList<PointF> arc = mDrawing.get(mDrawing.size() - 1);
-			arc.add(new PointF(docRelX, docRelY));
+			ArrayList<PointFExt> arc = mDrawing.get(mDrawing.size() - 1);
+			arc.add(new PointFExt(page, docRelX, docRelY, color, thickness));
+			Log.d("mupdf","con. color:"+color+",thickness:"+thickness);
 			mSearchView.invalidate();
 		}
 	}
@@ -476,15 +532,15 @@ public abstract class PageView extends ViewGroup {
 		mSearchView.invalidate();
 	}
 
-	protected PointF[][] getDraw() {
+	protected PointFExt[][] getDraw() {
 		if (mDrawing == null)
 			return null;
 
-		PointF[][] path = new PointF[mDrawing.size()][];
+		PointFExt[][] path = new PointFExt[mDrawing.size()][];
 
 		for (int i = 0; i < mDrawing.size(); i++) {
-			ArrayList<PointF> arc = mDrawing.get(i);
-			path[i] = arc.toArray(new PointF[arc.size()]);
+			ArrayList<PointFExt> arc = mDrawing.get(i);
+			path[i] = arc.toArray(new PointFExt[arc.size()]);
 		}
 
 		return path;
@@ -686,5 +742,13 @@ public abstract class PageView extends ViewGroup {
 	@Override
 	public boolean isOpaque() {
 		return true;
+	}
+	
+	public void removePreviousPath(int page){
+		if(mDrawing.size()>0){
+			mDrawing.remove(mDrawing.size()-1);
+		}
+		mSearchView.invalidate();
+		
 	}
 }

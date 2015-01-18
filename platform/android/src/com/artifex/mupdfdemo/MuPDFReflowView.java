@@ -106,10 +106,10 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		return false;
 	}
 
-	public void startDraw(float x, float y) {
+	public void startDraw(int page, float x, float y) {
 	}
 
-	public void continueDraw(float x, float y) {
+	public void continueDraw(int page, float x, float y) {
 	}
 
 	public void cancelDraw() {
@@ -178,5 +178,11 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	public boolean onTouchEvent(MotionEvent ev) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+	
+	@Override
+	public void removePreviousPath(int page) {
+		// TODO Auto-generated method stub
+		
 	}
 }

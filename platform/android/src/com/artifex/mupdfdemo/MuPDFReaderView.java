@@ -12,7 +12,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 public class MuPDFReaderView extends ReaderView {
-	enum Mode {Viewing, Selecting, Drawing}
+	public enum Mode {Viewing, Selecting, Drawing}
 	private final Context mContext;
 	private boolean mLinksEnabled = false;
 	private Mode mMode = Mode.Viewing;
@@ -189,7 +189,7 @@ public class MuPDFReaderView extends ReaderView {
 		MuPDFView pageView = (MuPDFView)getDisplayedView();
 		if (pageView != null)
 		{
-			pageView.startDraw(x, y);
+			pageView.startDraw(pageView.getPage(), x, y);
 		}
 		mX = x;
 		mY = y;
@@ -204,7 +204,7 @@ public class MuPDFReaderView extends ReaderView {
 			MuPDFView pageView = (MuPDFView)getDisplayedView();
 			if (pageView != null)
 			{
-				pageView.continueDraw(x, y);
+				pageView.continueDraw(pageView.getPage(), x, y);
 			}
 			mX = x;
 			mY = y;
@@ -272,5 +272,13 @@ public class MuPDFReaderView extends ReaderView {
 	@Override
 	protected void onScaleChild(View v, Float scale) {
 		((MuPDFView) v).setScale(scale);
+	}
+	
+	public void removePreviousPath(){
+		MuPDFView pageView = (MuPDFView)getDisplayedView();
+		if (pageView != null)
+		{
+			pageView.removePreviousPath(pageView.getPage());
+		}
 	}
 }

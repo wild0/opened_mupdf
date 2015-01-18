@@ -20,8 +20,8 @@ public interface MuPDFView {
 	public void setSearchBoxes(RectF searchBoxes[]);
 	public void setLinkHighlighting(boolean f);
 	public void deselectAnnotation();
-	public void startDraw(float x, float y);
-	public void continueDraw(float x, float y);
+	public void startDraw(int page, float x, float y);
+	public void continueDraw(int page, float x, float y);
 	public void cancelDraw();
 	public boolean saveDraw();
 	public void setChangeReporter(Runnable reporter);
@@ -30,4 +30,6 @@ public interface MuPDFView {
 	public void removeHq();
 	public void releaseResources();
 	public void releaseBitmaps();
+	
+	public void removePreviousPath(int page);
 }
